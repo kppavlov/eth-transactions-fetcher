@@ -1,6 +1,6 @@
-import e, { NextFunction, Response } from "express";
+import { NextFunction, Response } from "express";
 import { TransactionRlpRequest } from "../types";
-import { ethers } from "ethers";
+import { isValidRlpHex } from "./utils";
 
 export const ethRlpValidator = (
   req: TransactionRlpRequest,
@@ -9,41 +9,17 @@ export const ethRlpValidator = (
 ) => {
   const { rlPhex } = req.params;
 
-  const isHex = ethers.isHexString(rlPhex);
+  const check = isValidRlpHex(rlPhex);
 
-  if (!isHex) {
-    res
-      .status(400)
-      .send({ error: "The provided value for rlp is not a hex string." });
+  if (
+    typeof check !== "undefined" &&
+    typeof check !== "string" &&
+    !Array.isArray(check)
+  ) {
+    res.status(400).send(check.error);
     return;
   }
 
-  const decoded = ethers.decodeRlp(rlPhex);
-
-  if (Array.isArray(decoded)) {
-    const areAllValuesWithCorrectForm = decoded.every((transactionHash) =>
-      ethers.isHexString(transactionHash, 32),
-    );
-
-    if (!areAllValuesWithCorrectForm) {
-      res
-        .status(400)
-        .send({
-          error: "Not all provided values are correct transaction hashes",
-        });
-      return;
-    }
-
-    req.decodedRlpHex = decoded;
-    next();
-    return;
-  }
-
-  if (!ethers.isHexString(decoded, 32)) {
-    res.status(400).send({ error: "Invalid value for hex string." });
-    return;
-  }
-
-  req.decodedRlpHex = decoded;
+  req.decodedRlpHex = check;
   next();
 };

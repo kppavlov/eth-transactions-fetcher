@@ -10,7 +10,6 @@
     "skipLibCheck": true, // Skip type checking of declaration files
     "moduleResolution": "node", // Resolve modules as Node.js does
     "resolveJsonModule": true, // Allow importing JSON files
-    "declaration": true // Generate .d.ts files
   },
   "include": ["./src/**/*"], // Include all TypeScript files in src
   "exclude": ["node_modules", "**/*.test.ts"]

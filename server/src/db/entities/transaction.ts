@@ -1,8 +1,9 @@
 import PgConnect from "../pg-connect";
 import { Hash, QueryActions } from "../types";
 import { IUser } from "./user";
+import { RlpStructuredData } from "ethers";
 
-interface ITransaction {
+export interface ITransaction {
   transactionHash: Hash; // the hex encoded transaction hash of the transaction
   transactionStatus: number; // the status of the transaction either 1 (success) or 0 (failure)
   blockHash: Hash | null; // the hex encoding of the hash of the block the transaction was included in
@@ -28,7 +29,7 @@ export class TransactionEntity implements TransactionType {
   input: string;
   value: string;
   blockNumber: number | null;
-  static memoizedTransactions: Map<Hash, TransactionEntity> = new Map();
+  static memoizedTransactions: Map<RlpStructuredData, ITransaction> = new Map();
 
   constructor({
     transactionHash,
@@ -56,9 +57,7 @@ export class TransactionEntity implements TransactionType {
 
   static async getAll() {
     try {
-      return await PgConnect.query<TransactionEntity>(
-        "SELECT * FROM transactions",
-      );
+      return await PgConnect.query<ITransaction>("SELECT * FROM transactions");
     } catch (e) {
       return Promise.reject(e);
     }
@@ -83,9 +82,10 @@ export class TransactionEntity implements TransactionType {
     if (memoizedTransaction) {
       return memoizedTransaction;
     }
+
     try {
-      const res = await PgConnect.query<TransactionEntity>(
-        `INSERT INTO transactions VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+      const res = await PgConnect.query<ITransaction>(
+        `INSERT INTO transactions VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT("transactionHash") DO UPDATE SET "transactionHash" = EXCLUDED."transactionHash" RETURNING *`,
         [
           this.transactionHash,
           this.transactionStatus,
@@ -101,10 +101,10 @@ export class TransactionEntity implements TransactionType {
       );
 
       if (decodedToken) {
-        await PgConnect.query("INSERT INTO user_transactions VALUES($1, $2)", [
-          decodedToken.id,
-          this.transactionHash,
-        ]);
+        await PgConnect.query(
+          'INSERT INTO user_transactions VALUES($1, $2) ON CONFLICT("transactionHash", "userId") DO UPDATE SET "transactionHash" = EXCLUDED."transactionHash", "userId" = EXCLUDED."userId"',
+          [decodedToken.id, this.transactionHash],
+        );
       }
 
       // this could be a call to memoize in a service like Redis

@@ -35,13 +35,17 @@ export default (outerRoute: Router) => {
         let decodedToken;
 
         if (auth_token) {
-          decodedToken = jwt.verify(auth_token, envConfig.jwtSecret) as IUser;
+          const userService = new UserService();
+
+          decodedToken = userService.verifyJwtToken(auth_token);
         }
 
         if (decodedToken) {
           const usersService = new UserService();
 
-          const user = await usersService.getUserIfExists(decodedToken.username);
+          const user = await usersService.getUserIfExists(
+            decodedToken.username,
+          );
 
           if (!user) {
             res.status(401).send({ error: "Token`s payload is incorrect!" });
@@ -81,14 +85,17 @@ export default (outerRoute: Router) => {
       let decodedToken;
 
       if (auth_token) {
-        decodedToken = jwt.verify(auth_token, envConfig.jwtSecret) as IUser;
+        const userService = new UserService();
+
+        decodedToken = userService.verifyJwtToken(auth_token);
       }
 
       const ethService = new EthService(rpcProvider, decodedToken);
 
       try {
         const transactions =
-          (await ethService.getTransactionsByHash(decodedRlpHex)) ?? [];
+          (await ethService.getTransactionsByHash(decodedRlpHex as string)) ??
+          [];
 
         if (!transactions.length) {
           res

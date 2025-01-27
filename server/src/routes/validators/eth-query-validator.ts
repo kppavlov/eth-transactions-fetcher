@@ -24,7 +24,7 @@ export const transactionHashesValidatorHandler = (
   next: NextFunction,
 ) => {
   const validRes = validationResult(req);
-  console.log(validRes)
+
   if (!validRes.isEmpty()) {
     res.status(400).send(validRes.array());
     return;

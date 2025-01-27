@@ -29,7 +29,7 @@ export default (outerRoute: Router) => {
           res.status(400).send({ error: "Invalid credentials" });
           return;
         }
-        console.log(user);
+
         const token = userService.createJwtToken(user);
 
         res.status(200).send({ token });

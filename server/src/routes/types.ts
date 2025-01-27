@@ -28,7 +28,7 @@ export interface TransactionHashesRequest extends Request {
 
 export interface TransactionRlpRequest extends Request {
   params: TransactionRlpRequestParams;
-  decodedRlpHex?: HexString | HexString[];
+  decodedRlpHex?: RlpStructuredData;
   headers: Request['headers'] & OptionalAuthHeader;
 }
 

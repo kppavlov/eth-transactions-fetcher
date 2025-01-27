@@ -1,22 +1,26 @@
+import { TransactionResponse } from "ethers";
 import { EthService } from "../../services/eth-service";
 import { rpcProvider } from "../../providers/eth-provider";
 import { TransactionEntity } from "../../db/entities/transaction";
-import { TransactionResponseDto } from "../../db/dto/transaction-response-dto";
-import { MockTransaction } from "../_mocks_/mock-transaction";
+import {
+  MockTransaction,
+  mockTransactionReceipt,
+  mockTransactionResponse,
+} from "../_mocks_/mock-transaction";
 import PgConnect from "../../db/pg-connect";
-import { queryMock } from "../_mocks_/pg-mock";
-
-jest.mock("../../db/entities/transaction");
 
 describe("EthService", () => {
+  beforeAll(() => {
+    jest
+      .spyOn(PgConnect, "query")
+      .mockImplementation(() => Promise.resolve([MockTransaction]));
+  });
+
   describe("getAllSavedTransactions", () => {
     it("should get all saved transactions", async () => {
-      TransactionEntity.getAll = jest
-        .fn()
-        .mockImplementation(() => Promise.resolve([]));
       const service = new EthService(rpcProvider);
       const transactions = await service.getAllSavedTransactions();
-      expect(transactions).toEqual([]);
+      expect(transactions).toEqual([MockTransaction]);
     });
   });
 
@@ -35,7 +39,7 @@ describe("EthService", () => {
       expect(transactions).toEqual([MockTransaction]);
     });
 
-    it("should should reject if no decoded token is provided", async () => {
+    it("should reject if no decoded token is provided", async () => {
       TransactionEntity.getAllPersonal = jest
         .fn()
         .mockImplementation(() => Promise.reject());
@@ -51,31 +55,113 @@ describe("EthService", () => {
   });
 
   describe("getTransactionsByHash", () => {
-    it("should get transactions by hash", async () => {
+    beforeAll(() => {
       jest
-        .spyOn(PgConnect, "query")
-        .mockImplementation(
-          () =>
-            new Promise(() =>
-              Promise.resolve({ ...queryMock, rows: [MockTransaction] }),
-            ),
-        );
-      // const rpcMock = jest
-      //   .spyOn(rpcProvider, "getTransaction")
-      //   .mockImplementation(
-      //     (hash) =>
-      //       new Promise(() =>
-      //         Promise.resolve({ ...MockTransaction, transactionHash: hash }),
-      //       ),
-      //   );
+        .spyOn(rpcProvider, "getTransaction")
+        .mockImplementation(() => Promise.resolve(mockTransactionResponse));
+      jest
+        .spyOn(rpcProvider, "getTransactionReceipt")
+        .mockImplementation(() => Promise.resolve(mockTransactionReceipt));
+    });
 
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it("should get single transaction when provided a single hash", async () => {
       const service = new EthService(rpcProvider);
 
-      const res = await service.getTransactionsByHash(
-        "0xcbc920e7bb89cbcb540a469a16226bf1057825283ab8eac3f45d00811eef8a64",
+      const singleTransactionHashSpy = jest.spyOn(
+        EthService.prototype,
+        "handleSingleTransactionHash",
+      );
+      const singleTransactionFetchHashSpy = jest.spyOn(
+        EthService.prototype,
+        "fetchAndSaveSingleTransaction",
       );
 
-      console.log(res);
+      const transactionHash =
+        "0xcbc920e7bb89cbcb540a469a16226bf1057825283ab8eac3f45d00811eef8a64";
+      const res = await service.getTransactionsByHash(transactionHash);
+
+      expect(singleTransactionHashSpy).toHaveBeenCalledWith(transactionHash);
+      expect(singleTransactionFetchHashSpy).toHaveBeenCalledWith(
+        transactionHash,
+      );
+      expect(TransactionEntity.memoizedTransactions).toEqual(
+        new Map().set(transactionHash, MockTransaction),
+      );
+      expect(res).toEqual([MockTransaction]);
+    });
+
+    it("should get multiple transactions when provided more than one hash", async () => {
+      const firstHash =
+        "0xcbc920e7bb89cbcb540a469a16226bf1057825283ab8eac3f45d00811eef8a64";
+      const secondHash =
+        "0xcbc920e7bb89cbcb540a469a16226bf1057825283ab8eac3f45d00811eef8a65";
+      const service = new EthService(rpcProvider);
+      jest.clearAllMocks();
+      jest
+        .spyOn(PgConnect, "query")
+        .mockClear()
+        .mockReturnValue(
+          new Promise((resolve) =>
+            resolve([{ ...MockTransaction, transactionHash: firstHash }]),
+          ),
+        )
+        .mockReturnValue(
+          new Promise((resolve) =>
+            resolve([{ ...MockTransaction, transactionHash: secondHash }]),
+          ),
+        );
+      jest
+        .spyOn(rpcProvider, "getTransaction")
+        .mockImplementationOnce((hash) =>
+          Promise.resolve({
+            ...mockTransactionResponse,
+            hash,
+          } as TransactionResponse),
+        )
+        .mockImplementationOnce((hash) =>
+          Promise.resolve({
+            ...mockTransactionResponse,
+            hash,
+          } as TransactionResponse),
+        );
+      jest
+        .spyOn(rpcProvider, "getTransactionReceipt")
+        .mockImplementation(() => Promise.resolve(mockTransactionReceipt));
+
+      const singleTransactionHashSpy = jest.spyOn(
+        EthService.prototype,
+        "handleMultipleTransactionHashes",
+      );
+      const multipleTransactionFetchHashSpy = jest.spyOn(
+        EthService.prototype,
+        "fetchAndSaveTransactions",
+      );
+      const singleTransactionFetchHashSpy = jest.spyOn(
+        EthService.prototype,
+        "fetchAndSaveSingleTransaction",
+      );
+
+      const transactionHashes = [firstHash, secondHash];
+      const res = await service.getTransactionsByHash(transactionHashes);
+
+      expect(singleTransactionHashSpy).toHaveBeenCalledWith(transactionHashes);
+      expect(multipleTransactionFetchHashSpy).toHaveBeenCalledWith(
+        transactionHashes,
+      );
+      expect(singleTransactionFetchHashSpy).toHaveBeenCalledWith(firstHash);
+      expect(singleTransactionFetchHashSpy).toHaveBeenCalledWith(secondHash);
+      expect(singleTransactionFetchHashSpy).toHaveBeenCalledTimes(2);
+      expect(res).toEqual([
+        MockTransaction,
+        {
+          ...MockTransaction,
+          transactionHash: secondHash,
+        },
+      ]);
     });
   });
 });

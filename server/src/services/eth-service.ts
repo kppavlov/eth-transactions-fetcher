@@ -1,6 +1,6 @@
 import { JsonRpcProvider } from "ethers";
 import { Hash, Hashes } from "../db/types";
-import { TransactionEntity } from "../db/entities/transaction";
+import { ITransaction, TransactionEntity } from "../db/entities/transaction";
 import { TransactionResponseDto } from "../db/dto/transaction-response-dto";
 import { IUser } from "../db/entities/user";
 
@@ -13,7 +13,7 @@ export class EthService {
     this.jwtDecodedToken = jwtDecodedToken;
   }
 
-  async getAllSavedTransactions(): Promise<TransactionEntity[]> {
+  async getAllSavedTransactions(): Promise<ITransaction[]> {
     try {
       return await TransactionEntity.getAll();
     } catch (e) {
@@ -26,16 +26,14 @@ export class EthService {
       if (!this.jwtDecodedToken) {
         return Promise.reject({ error: "No decoded token provided" });
       }
-      console.log(this.jwtDecodedToken);
+
       return await TransactionEntity.getAllPersonal(this.jwtDecodedToken.id);
     } catch (e) {
       return Promise.reject(e);
     }
   }
 
-  async getTransactionsByHash(
-    arg: Hash | Hashes,
-  ): Promise<TransactionEntity[]> {
+  async getTransactionsByHash(arg: Hash | Hashes): Promise<ITransaction[]> {
     if (Array.isArray(arg)) {
       try {
         return await this.handleMultipleTransactionHashes(arg);
@@ -52,23 +50,23 @@ export class EthService {
     }
   }
 
-  private async handleSingleTransactionHash(hash: Hash) {
+  async handleSingleTransactionHash(hash: Hash) {
     try {
-      return await this.fetchSingleTransaction(hash);
+      return await this.fetchAndSaveSingleTransaction(hash);
     } catch (e) {
       return Promise.reject(e);
     }
   }
 
-  private async handleMultipleTransactionHashes(hashes: Hashes) {
+  async handleMultipleTransactionHashes(hashes: Hashes) {
     try {
-      return await this.fetchTransactions(hashes);
+      return await this.fetchAndSaveTransactions(hashes);
     } catch (e) {
       return Promise.reject(e);
     }
   }
 
-  private async fetchSingleTransaction(hash: Hash) {
+  async fetchAndSaveSingleTransaction(hash: Hash) {
     if (TransactionEntity.memoizedTransactions.get(hash)) {
       return TransactionEntity.memoizedTransactions.get(hash);
     }
@@ -87,12 +85,13 @@ export class EthService {
     ).save(this.jwtDecodedToken);
   }
 
-  private async fetchTransactions(hashes: Hashes) {
-    let transactions: TransactionEntity[] = [];
+  async fetchAndSaveTransactions(hashes: Hashes) {
+    let transactions: ITransaction[] = [];
 
     // maybe a bulk fetch is available in ethers.js???
     for await (const transactionHash of hashes) {
-      const transaction = await this.fetchSingleTransaction(transactionHash);
+      const transaction =
+        await this.fetchAndSaveSingleTransaction(transactionHash);
 
       if (!transaction) {
         continue;

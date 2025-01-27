@@ -9,6 +9,7 @@ import { MyRequest } from "./types";
 import jwt from "jsonwebtoken";
 import { IUser } from "../db/entities/user";
 import envConfig from "../config";
+import { UserService } from "../services/user-service";
 
 const innerRoute = Router();
 
@@ -22,11 +23,10 @@ export default (outerRoute: Router) => {
     async (req: MyRequest, res) => {
       try {
         const { auth_token } = req.headers;
-        console.log(jwt.decode(auth_token ?? ""));
-        const decodedToken = jwt.verify(
-          auth_token ?? "",
-          envConfig.jwtSecret,
-        ) as IUser;
+
+        const userService = new UserService();
+
+        const decodedToken = userService.verifyJwtToken(auth_token ?? "");
 
         const ethService = new EthService(rpcProvider, decodedToken);
 

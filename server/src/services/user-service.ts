@@ -39,6 +39,14 @@ export class UserService {
     }
   }
 
+  verifyJwtToken(token: string): IUser {
+    try {
+      return jwt.verify(token, envConfig.jwtSecret) as IUser;
+    } catch (e) {
+      throw e;
+    }
+  }
+
   async getUserIfExists(username: string) {
     try {
       return await UserEntity.findOne(username);
