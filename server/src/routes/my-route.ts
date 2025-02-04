@@ -6,9 +6,6 @@ import {
   authenticateCredentialsValidatorHandler,
 } from "./validators/my-validator";
 import { MyRequest } from "./types";
-import jwt from "jsonwebtoken";
-import { IUser } from "../db/entities/user";
-import envConfig from "../config";
 import { UserService } from "../services/user-service";
 
 const innerRoute = Router();
@@ -35,7 +32,6 @@ export default (outerRoute: Router) => {
 
         res.status(200).send(transactions);
       } catch (e) {
-        console.log(e);
         res.status(500).send(e);
       }
     },

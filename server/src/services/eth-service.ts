@@ -14,61 +14,50 @@ export class EthService {
   }
 
   async getAllSavedTransactions(): Promise<ITransaction[]> {
-    try {
-      return await TransactionEntity.getAll();
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    return await TransactionEntity.getAll();
   }
 
   async getAllFetchedTransactionsPerPerson(): Promise<TransactionEntity[]> {
-    try {
-      if (!this.jwtDecodedToken) {
-        return Promise.reject({ error: "No decoded token provided" });
-      }
-
-      return await TransactionEntity.getAllPersonal(this.jwtDecodedToken.id);
-    } catch (e) {
-      return Promise.reject(e);
+    if (!this.jwtDecodedToken) {
+      return Promise.reject(new Error("No decoded token provided"));
     }
+
+    return await TransactionEntity.getAllPersonal(this.jwtDecodedToken.id);
   }
 
   async getTransactionsByHash(arg: Hash | Hashes): Promise<ITransaction[]> {
     if (Array.isArray(arg)) {
-      try {
-        return await this.handleMultipleTransactionHashes(arg);
-      } catch (e) {
-        return Promise.reject(e);
-      }
+      return await this.handleMultipleTransactionHashes(arg);
     }
 
-    try {
-      const transaction = await this.handleSingleTransactionHash(arg);
-      return transaction ? [transaction] : [];
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    const transaction = await this.handleSingleTransactionHash(arg);
+    return transaction ? [transaction] : [];
   }
 
   async handleSingleTransactionHash(hash: Hash) {
-    try {
-      return await this.fetchAndSaveSingleTransaction(hash);
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    return await this.fetchAndSaveSingleTransaction(hash);
   }
 
   async handleMultipleTransactionHashes(hashes: Hashes) {
-    try {
-      return await this.fetchAndSaveTransactions(hashes);
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    return await this.fetchAndSaveTransactions(hashes);
   }
 
   async fetchAndSaveSingleTransaction(hash: Hash) {
-    if (TransactionEntity.memoizedTransactions.get(hash)) {
-      return TransactionEntity.memoizedTransactions.get(hash);
+    const memoizedTransaction =
+      TransactionEntity.memoizedTransactions.get(hash);
+
+    if (memoizedTransaction) {
+      if (!memoizedTransaction.hasBeenSaved && this.jwtDecodedToken) {
+        await new TransactionEntity(memoizedTransaction).save(
+          this.jwtDecodedToken,
+        );
+        TransactionEntity.memoizedTransactions.set(hash, {
+          ...memoizedTransaction,
+          hasBeenSaved: true,
+        });
+      }
+
+      return { ...memoizedTransaction, hasBeenSaved: undefined };
     }
 
     const transaction = await this.rpcProvider.getTransaction(hash);

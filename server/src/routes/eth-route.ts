@@ -48,7 +48,7 @@ export default (outerRoute: Router) => {
           );
 
           if (!user) {
-            res.status(401).send({ error: "Token`s payload is incorrect!" });
+            res.status(401).send(new Error("Token`s payload is incorrect!"));
             return;
           }
         }
@@ -62,13 +62,12 @@ export default (outerRoute: Router) => {
         if (!transactions.length) {
           res
             .status(422)
-            .send({ error: "None of the transactions could be fetched" });
+            .send(new Error("None of the transactions could be fetched"));
           return;
         }
         res.status(200).send(transactions);
         return;
       } catch (e) {
-        console.log(e);
         res.status(500).send({ error: e });
         return;
       }
@@ -100,7 +99,7 @@ export default (outerRoute: Router) => {
         if (!transactions.length) {
           res
             .status(422)
-            .send({ error: "None of the transactions could be fetched" });
+            .send(new Error("None of the transactions could be fetched"));
           return;
         }
         res.status(200).send(transactions);

@@ -18,18 +18,18 @@ export interface TransactionRlpRequestParams extends ParamsDictionary {
 }
 
 export interface MyRequest extends Request {
-  headers: Request['headers'] & OptionalAuthHeader;
+  headers: Request["headers"] & OptionalAuthHeader;
 }
 
 export interface TransactionHashesRequest extends Request {
   query: QueryParams;
-  headers: Request['headers'] & OptionalAuthHeader;
+  headers: Request["headers"] & OptionalAuthHeader;
 }
 
 export interface TransactionRlpRequest extends Request {
   params: TransactionRlpRequestParams;
   decodedRlpHex?: RlpStructuredData;
-  headers: Request['headers'] & OptionalAuthHeader;
+  headers: Request["headers"] & OptionalAuthHeader;
 }
 
 export type AuthenticationRequestBody = {

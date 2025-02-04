@@ -8,50 +8,34 @@ import { verifyPassword } from "../utils";
 
 export class UserService {
   async verifyUserCredentials(credentials: AuthenticationRequestBody) {
-    try {
-      const { username, password } = credentials;
-      const user = await UserEntity.findOne(username);
+    const { username, password } = credentials;
+    const user = await UserEntity.findOne(username);
 
-      if (!user) {
-        return;
-      }
-
-      const { password: passwordFromDb } = user;
-
-      if (!(await verifyPassword(password, passwordFromDb ?? ""))) {
-        return Promise.reject("Wrong credentials");
-      }
-
-      return {
-        ...user,
-        password: null,
-      };
-    } catch (e) {
-      return Promise.reject(e);
+    if (!user) {
+      return;
     }
+
+    const { password: passwordFromDb } = user;
+
+    if (!(await verifyPassword(password, passwordFromDb ?? ""))) {
+      return Promise.reject("Wrong credentials");
+    }
+
+    return {
+      ...user,
+      password: null,
+    };
   }
 
   createJwtToken(user: IUser) {
-    try {
-      return jwt.sign(user, envConfig.jwtSecret);
-    } catch (e) {
-      throw e;
-    }
+    return jwt.sign(user, envConfig.jwtSecret);
   }
 
   verifyJwtToken(token: string): IUser {
-    try {
-      return jwt.verify(token, envConfig.jwtSecret) as IUser;
-    } catch (e) {
-      throw e;
-    }
+    return jwt.verify(token, envConfig.jwtSecret) as IUser;
   }
 
   async getUserIfExists(username: string) {
-    try {
-      return await UserEntity.findOne(username);
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    return await UserEntity.findOne(username);
   }
 }

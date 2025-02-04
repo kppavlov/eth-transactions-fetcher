@@ -1,14 +1,14 @@
-import {body, validationResult} from "express-validator";
-import {TransactionHashesRequest} from "../types";
-import {NextFunction, Response, Request} from "express";
+import { body, validationResult } from "express-validator";
+import { TransactionHashesRequest } from "../types";
+import { NextFunction, Response, Request } from "express";
 
 export const authenticateCredentialsValidator = () =>
-  body(['username', 'password']).notEmpty();
+  body(["username", "password"]).notEmpty();
 
 export const authenticateCredentialsValidatorHandler = (
-    req: Request,
-    res: Response,
-    next: NextFunction,
+  req: Request,
+  res: Response,
+  next: NextFunction,
 ) => {
   const validRes = validationResult(req);
 

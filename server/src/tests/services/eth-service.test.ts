@@ -89,7 +89,7 @@ describe("EthService", () => {
         transactionHash,
       );
       expect(TransactionEntity.memoizedTransactions).toEqual(
-        new Map().set(transactionHash, MockTransaction),
+        new Map().set(transactionHash, { ...MockTransaction, hasBeenSaved: false }),
       );
       expect(res).toEqual([MockTransaction]);
     });

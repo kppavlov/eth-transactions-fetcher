@@ -50,7 +50,10 @@ class PgConnect {
     return PgConnect.getInstance().getPool()?.connect();
   }
 
-  static async query<R extends pg.QueryResultRow>(query: string, values?: any[]) {
+  static async query<R extends pg.QueryResultRow>(
+    query: string,
+    values?: any[],
+  ) {
     const client = await PgConnect.getClient();
     const res = await client?.query<R>(query, values);
 

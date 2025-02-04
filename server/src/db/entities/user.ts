@@ -20,30 +20,21 @@ export class UserEntity implements IUser {
   }
 
   async save() {
-    try {
-      const hashedPassword = await hashPassword(this.password);
-      const res = await PgConnect.query<UserEntity>(
-        "INSERT INTO users VALUES($1, $2, $3) ON CONFLICT(username) DO UPDATE SET username = EXCLUDED.username;",
-        [this.id, this.username, hashedPassword],
-      );
+    const hashedPassword = await hashPassword(this.password);
+    const res = await PgConnect.query<UserEntity>(
+      "INSERT INTO users VALUES($1, $2, $3) ON CONFLICT(username) DO UPDATE SET username = EXCLUDED.username;",
+      [this.id, this.username, hashedPassword],
+    );
 
-      return res[0];
-    } catch (e) {
-      console.log(e);
-      throw e;
-    }
+    return res[0];
   }
 
   static async findOne(username: string) {
-    try {
-      return (
-        await PgConnect.query<IUser>(
-          "SELECT password, username, id FROM users WHERE username = $1;",
-          [username],
-        )
-      )[0];
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    return (
+      await PgConnect.query<IUser>(
+        "SELECT password, username, id FROM users WHERE username = $1;",
+        [username],
+      )
+    )[0];
   }
 }

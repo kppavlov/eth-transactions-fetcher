@@ -26,7 +26,7 @@ export default (outerRoute: Router) => {
         });
 
         if (!user) {
-          res.status(400).send({ error: "Invalid credentials" });
+          res.status(400).send(new Error("Invalid credentials"));
           return;
         }
 
@@ -34,7 +34,6 @@ export default (outerRoute: Router) => {
 
         res.status(200).send({ token });
       } catch (e) {
-        console.log(e);
         res.status(500).send(e);
       }
     },

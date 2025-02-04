@@ -1,6 +1,6 @@
 import { NextFunction, Response } from "express";
 import { TransactionRlpRequest } from "../types";
-import { isValidRlpHex } from "./utils";
+import { getRlpHexOrError } from "./utils";
 
 export const ethRlpValidator = (
   req: TransactionRlpRequest,
@@ -9,14 +9,14 @@ export const ethRlpValidator = (
 ) => {
   const { rlPhex } = req.params;
 
-  const check = isValidRlpHex(rlPhex);
+  const check = getRlpHexOrError(rlPhex);
 
   if (
     typeof check !== "undefined" &&
     typeof check !== "string" &&
     !Array.isArray(check)
   ) {
-    res.status(400).send(check.error);
+    res.status(400).send(check.message);
     return;
   }
 

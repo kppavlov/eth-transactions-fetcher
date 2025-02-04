@@ -29,7 +29,10 @@ export class TransactionEntity implements TransactionType {
   input: string;
   value: string;
   blockNumber: number | null;
-  static memoizedTransactions: Map<RlpStructuredData, ITransaction> = new Map();
+  static memoizedTransactions: Map<
+    RlpStructuredData,
+    ITransaction & { hasBeenSaved: boolean }
+  > = new Map();
 
   constructor({
     transactionHash,
@@ -56,63 +59,46 @@ export class TransactionEntity implements TransactionType {
   }
 
   static async getAll() {
-    try {
-      return await PgConnect.query<ITransaction>("SELECT * FROM transactions");
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    return await PgConnect.query<ITransaction>("SELECT * FROM transactions");
   }
 
   static async getAllPersonal(userId: string) {
-    try {
-      return await PgConnect.query<TransactionEntity>(
-        `SELECT * FROM transactions as t JOIN user_transactions as ut ON t."transactionHash" = ut."transactionHash" AND ut."userId" = $1;`,
-        [userId],
-      );
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    return await PgConnect.query<TransactionEntity>(
+      `SELECT * FROM transactions as t JOIN user_transactions as ut ON t."transactionHash" = ut."transactionHash" AND ut."userId" = $1;`,
+      [userId],
+    );
   }
 
   async save(decodedToken?: IUser) {
-    const memoizedTransaction = TransactionEntity.memoizedTransactions.get(
-      this.transactionHash,
+    const res = await PgConnect.query<ITransaction>(
+      `INSERT INTO transactions VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT("transactionHash") DO UPDATE SET "transactionHash" = EXCLUDED."transactionHash" RETURNING *`,
+      [
+        this.transactionHash,
+        this.transactionStatus,
+        this.blockHash,
+        this.blockNumber,
+        this.from,
+        this.to,
+        this.contractAddress,
+        this.logsCount,
+        this.input,
+        this.value,
+      ],
     );
 
-    if (memoizedTransaction) {
-      return memoizedTransaction;
-    }
-
-    try {
-      const res = await PgConnect.query<ITransaction>(
-        `INSERT INTO transactions VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT("transactionHash") DO UPDATE SET "transactionHash" = EXCLUDED."transactionHash" RETURNING *`,
-        [
-          this.transactionHash,
-          this.transactionStatus,
-          this.blockHash,
-          this.blockNumber,
-          this.from,
-          this.to,
-          this.contractAddress,
-          this.logsCount,
-          this.input,
-          this.value,
-        ],
+    if (decodedToken) {
+      await PgConnect.query(
+        'INSERT INTO user_transactions VALUES($1, $2) ON CONFLICT("transactionHash", "userId") DO UPDATE SET "transactionHash" = EXCLUDED."transactionHash", "userId" = EXCLUDED."userId"',
+        [decodedToken.id, this.transactionHash],
       );
-
-      if (decodedToken) {
-        await PgConnect.query(
-          'INSERT INTO user_transactions VALUES($1, $2) ON CONFLICT("transactionHash", "userId") DO UPDATE SET "transactionHash" = EXCLUDED."transactionHash", "userId" = EXCLUDED."userId"',
-          [decodedToken.id, this.transactionHash],
-        );
-      }
-
-      // this could be a call to memoize in a service like Redis
-      TransactionEntity.memoizedTransactions.set(this.transactionHash, res[0]);
-
-      return res[0];
-    } catch (e) {
-      return Promise.reject(e);
     }
+
+    // this could be a call to memoize in a service like Redis
+    TransactionEntity.memoizedTransactions.set(this.transactionHash, {
+      ...res[0],
+      hasBeenSaved: !!decodedToken,
+    });
+
+    return res[0];
   }
 }
