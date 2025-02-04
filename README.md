@@ -21,7 +21,7 @@
     A bash script that sets and prepares all the application to be tested locally.
     It fetches the lates postgres docker image and sets all required env variables for it.
     It creates a local bridge network so that the DB and our app can communicate.
-    It also uses the Dockerfile in the app to create a image of our limeapi and runs it.
+    It also uses the Dockerfile in the app to create a image of our fetcherapi and runs it.
     So whenever you run the script you will get a fully working application and DB set up.
 
 ### The DB folder holds:
@@ -67,7 +67,7 @@
     manager so that they do not leak in the git repository. There are also a couple of missing steps that will be
     required, like pushing the built image to a docker repository. Then, once it is there we can fetch it and create 
     container whenever we need them. So it all depends on what we want to achieve. 
-    In order to scale the limeapi we can use kubernetes cluster and define configuration which wiill scale in/out 
+    In order to scale the fetcherapi we can use kubernetes cluster and define configuration which wiill scale in/out 
     the number of pods based on the demand. Kubernetes could also be user for loadbalancing between the pods.
 
 # Endpoints
