@@ -1,5 +1,4 @@
 import { body, validationResult } from "express-validator";
-import { TransactionHashesRequest } from "../types";
 import { NextFunction, Response, Request } from "express";
 
 export const authenticateCredentialsValidator = () =>

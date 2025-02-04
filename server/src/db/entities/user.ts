@@ -1,5 +1,5 @@
 import PgConnect from "../pg-connect";
-import { hashPassword, verifyPassword } from "../../utils";
+import { hashPassword } from "../../utils";
 import { AuthenticationRequestBody } from "../../routes/types";
 
 export interface IUser {

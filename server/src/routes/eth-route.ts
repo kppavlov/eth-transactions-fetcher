@@ -1,5 +1,4 @@
 import { Router } from "express";
-import jwt from "jsonwebtoken";
 
 // VALIDATORS
 import {
@@ -10,12 +9,10 @@ import { ethRlpValidator } from "./validators/eth-param-validator";
 
 // CONSTANTS
 import { rpcProvider } from "../providers/eth-provider";
-import envConfig from "../config";
 
 // TYPES
 import { EthService } from "../services/eth-service";
 import { TransactionHashesRequest, TransactionRlpRequest } from "./types";
-import { IUser } from "../db/entities/user";
 import { UserService } from "../services/user-service";
 
 const innerRoute = Router();
