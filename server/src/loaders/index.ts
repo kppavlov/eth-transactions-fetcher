@@ -4,5 +4,5 @@ import routes from "../routes";
 
 export default ({ expressApp }: { expressApp: Express }) => {
   expressApp.use(express.json());
-  expressApp.use("/lime", routes());
+  expressApp.use("/fetcher", routes());
 };

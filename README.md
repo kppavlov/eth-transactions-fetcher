@@ -38,7 +38,7 @@
 
 ### The Routes folder:
     It holds all the route handlers for the application. All the files there define
-    the sub-routes of the main route("/lime" in our case). There you can also find the 
+    the sub-routes of the main route("/fetcher" in our case). There you can also find the 
     validator functions that are used to validate the user input.
 
 ### The Services folder:
@@ -72,17 +72,17 @@
 
 # Endpoints
 
-1. `/lime/authenticate` - Creates a json web token if the user exists in the DB otherwise returns an error response.
-2. `/lime/eth?transactionHashes` - This one gets all provided transaction hashes, checks if they are valid and fetches them from the test net. Every next request does not do a db read but instead takes the result from the RAM. The responses are memoized in the RAM for quick access and minimization of Read operations which could cost money. If a ATUH_TOKEN header is provided a association is also saved in the DB with the userId and the transactionHash.
-3. `/lime/eth/:rlphexstringparam` - It works the same as the transactionHashes but first takes the rlp hex string, validates it if it is a hex string then decodes it to get the transaction hashes array or single hash, ensures they are all valid transactionHashes and then does what the endpoint number 2 does.
-4. `/lime/my` - Works only if there is a valid AUTH_TOKEN header present. It verifies it, decodes it, checks if the user exists in the DB and only then queries the DB to get the associated transactions with the userId.
-5. `/lime/all` - Gets all the already fetched and stored transactions in the DB.
+1. `/fetcher/authenticate` - Creates a json web token if the user exists in the DB otherwise returns an error response.
+2. `/fetcher/eth?transactionHashes` - This one gets all provided transaction hashes, checks if they are valid and fetches them from the test net. Every next request does not do a db read but instead takes the result from the RAM. The responses are memoized in the RAM for quick access and minimization of Read operations which could cost money. If a ATUH_TOKEN header is provided a association is also saved in the DB with the userId and the transactionHash.
+3. `/fetcher/eth/:rlphexstringparam` - It works the same as the transactionHashes but first takes the rlp hex string, validates it if it is a hex string then decodes it to get the transaction hashes array or single hash, ensures they are all valid transactionHashes and then does what the endpoint number 2 does.
+4. `/fetcher/my` - Works only if there is a valid AUTH_TOKEN header present. It verifies it, decodes it, checks if the user exists in the DB and only then queries the DB to get the associated transactions with the userId.
+5. `/fetcher/all` - Gets all the already fetched and stored transactions in the DB.
 
 
 # Example payloads
 
 ```
-POST: /lime/authenticate -> accepts only 4 payrs of credentials:
+POST: /fetcher/authenticate -> accepts only 4 payrs of credentials:
 - { password: `alice`, username: `alice`}
 - { password: `bob`, username: `bob` }
 - { password: `carol`, username:`carol` }
@@ -92,7 +92,7 @@ Returns JWT or error if authentication is not successfull
 ```
 
 ```jsx
-GET: /lime/eth?transactionHashes=0xfc2b3b6db38a51db3b9cb95de29b719de8deb99630626e4b4b99df056ffb7f2e&transactionHashes=0x48603f7adff7fbfc2a10b22a6710331ee68f2e4d1cd73a584d57c8821df79356&transactionHashes=0xcbc920e7bb89cbcb540a469a16226bf1057825283ab8eac3f45d00811eef8a64&transactionHashes=0x6d604ffc644a282fca8cb8e778e1e3f8245d8bd1d49326e3016a3c878ba0cbbd -> 
+GET: /fetcher/eth?transactionHashes=0xfc2b3b6db38a51db3b9cb95de29b719de8deb99630626e4b4b99df056ffb7f2e&transactionHashes=0x48603f7adff7fbfc2a10b22a6710331ee68f2e4d1cd73a584d57c8821df79356&transactionHashes=0xcbc920e7bb89cbcb540a469a16226bf1057825283ab8eac3f45d00811eef8a64&transactionHashes=0x6d604ffc644a282fca8cb8e778e1e3f8245d8bd1d49326e3016a3c878ba0cbbd -> 
 
 Returns a list of the fetched transactions:
 [
@@ -148,7 +148,7 @@ Returns a list of the fetched transactions:
 ```
 
 ```jsx
-/lime/eth/f90110b842307866633262336236646233386135316462336239636239356465323962373139646538646562393936333036323665346234623939646630353666666237663265b842307834383630336637616466663766626663326131306232326136373130333331656536386632653464316364373361353834643537633838323164663739333536b842307863626339323065376262383963626362353430613436396131363232366266313035373832353238336162386561633366343564303038313165656638613634b842307836643630346666633634346132383266636138636238653737386531653366383234356438626431643439333236653330313661336338373862613063626264 ->
+/fetcher/eth/f90110b842307866633262336236646233386135316462336239636239356465323962373139646538646562393936333036323665346234623939646630353666666237663265b842307834383630336637616466663766626663326131306232326136373130333331656536386632653464316364373361353834643537633838323164663739333536b842307863626339323065376262383963626362353430613436396131363232366266313035373832353238336162386561633366343564303038313165656638613634b842307836643630346666633634346132383266636138636238653737386531653366383234356438626431643439333236653330313661336338373862613063626264 ->
 
 Returns a lsit of transactions found:
     [
@@ -204,11 +204,11 @@ Returns a lsit of transactions found:
 ```
 
 ```typescript jsx
-GET: /lime/my -> Returns all transactions that an authenticated user has fetched. Requires a valid AUTH_TOKEN header.
+GET: /fetcher/my -> Returns all transactions that an authenticated user has fetched. Requires a valid AUTH_TOKEN header.
 ```
 
 ```typescript jsx
-GET: /lime/all -> Returns all transactions that have ever been fetched and stored in the DB.
+GET: /fetcher/all -> Returns all transactions that have ever been fetched and stored in the DB.
 ```
 
 
